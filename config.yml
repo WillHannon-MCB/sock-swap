@@ -1,2 +1,7 @@
-email: wwh22@uw.edu
-password: secret.txt
+email:
+  username: jbloom.lab.sock.swap@gmail.com
+  password: secret_password.txt
+exclusion_list:
+  - ["Jesse Bloom", "Aster Bloom"]
+  - ["Jesse Bloom", "Alice Bloom"]
+  - ["Alice Bloom", "Aster Bloom"]
