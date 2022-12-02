@@ -59,59 +59,34 @@ def read_config(filpath):
     # Return the config
     return config
 
-# Function to send email give a list of tuples and dataframe of email addresses
-
-
-# def send_email(pairs, df, config):
-#     # Create a list to store the emails
-#     emails = []
-#     # Loop through the list of pairs
-#     for pair in pairs:
-#         # Get the email addresses for the secret sock santa
-#         email = df.query('Name == @pair[0]')['Email'].values[0]
-#         # Create the email message
-#         message = f"Hey {pair[0]}, you have {pair[1]} for secret sock santa!"
-#         # Add the email to the list of emails
-#         emails.append((email['Email'].values[0], message))
-#     # Create the email server
-#     server = smtplib.SMTP('smtp.gmail.com', 587)
-#     # Start the email server
-#     server.starttls()
-#     # Get password from config text file
-#     with open(config['password_file'], 'r') as stream:
-#         password = stream.read()
-#     # Get username from config
-#     username = config['email']['username']
-#     # Login to the email server
-#     server.login(username, password)
-#     # Loop through the list of emails
-#     for email in emails:
-#         # Recipient email address
-#         to = email[0]
-#         # Message
-#         msg = email[1]
-#         # Send the email
-#         server.sendmail(config['email']['username'], to, msg)
-#     # Close the email server
-#     server.quit()
-
 # Function to send test emails to grace
-def send_emails_to_grace(pairs, df, config):
-    # Get the email address and password for sender
+
+
+def send_emails(pairs, df, config, dry_run=False):
+
+    # Get the email address and password for sender account
     username = config['email']['username']
     with open(config['email']['password'], 'r') as stream:
         password = stream.read()
 
     # Make the email message for each pair
     for pair in pairs:
-        # Get the email address for the recipient
-        to = username
+
+        # Get the email address for the recipient (unless it's a dry run)
+        if dry_run:
+            to = username
+        else:
+            to = df.query('Name == @pair[0]')['Email'].values[0]
+
+        # Get the sock size for the recipient
+        sock_size = df.query('Name == @pair[1]')['Sock Size'].values[0]
+
         # Create the email message content
         msg = EmailMessage()
         msg.set_content(
-            f"Hey {pair[0]}, you have {pair[1]} for secret sock santa!")
+            f"Hi {pair[0]},\n\n\tYour secret Bloom Lab sock swap assignment is {pair[1]}! Their sock size is {sock_size}.\n\nHappy Holidays!")
         # Set the subject
-        msg['Subject'] = 'Secret Sock Santa Assignment'
+        msg['Subject'] = 'Secret Sock Swap Assignment'
         msg['From'] = username
         msg['To'] = to
         # Create the email server
@@ -124,15 +99,38 @@ def send_emails_to_grace(pairs, df, config):
 
 if __name__ == '__main__':
 
+    # Create the argument parser
+    parser = argparse.ArgumentParser()
+    # Add the argument for the participants file
+    parser.add_argument('--participants', type=str,
+                        default='participants.csv', help='Path to the participants file')
+    # Add the argument for the config file
+    parser.add_argument('--config', type=str, default='config.yaml',
+                        help='Path to the config file')
+    # Add the argument for dry run, true or false
+    parser.add_argument('--dry_run', type=bool, default=False,
+                        help='Dry run, send test emails to yourself')
+    # Parse the arguments
+    args = parser.parse_args()
+
+    print("\nWelcome to the Bloom Lab sock swap!\n")
+
     # Read in a csv file as a pandas dataframe
-    df = pd.read_csv('participants.csv')
+    df = pd.read_csv(args.participants)
     # Create a list of names from the dataframe
     names = df['Name'].tolist()
+
     # Read in the config file
-    config = read_config('config.yml')
+    config = read_config(args.config)
     # Create a list of excluded pairs
     exclusion_list = [tuple(l) for l in config['exclusion_list']]
+    # Make sure that the names in the exclusion list are in the participants list
+    for pair in exclusion_list:
+        if pair[0] not in names or pair[1] not in names:
+            raise ValueError(
+                f"Names in exclusion list must be in participants list: {pair}")
     print(f"Excluding the following pairs: {exclusion_list}\n")
+
     # Make shuffled pairs until there is no pair in the exclusion list
     while True:
         # Shuffle the names
@@ -148,8 +146,20 @@ if __name__ == '__main__':
     with open('secret_pairs.txt', 'w') as f:
         for pair in pairs:
             f.write(f"{pair[0]} has {pair[1]}\n")
+    print("Wrote emails to secret_pairs.txt\n")
 
-    # Send the emails
-    send_emails_to_grace(pairs, df, config)
-
-    print("Done! Secret Santa pairs have been emailed.\n Merry Christmas!")
+    # Get user input to send emails
+    send = input("Send emails? (y/n): ")
+    # Check if the user wants to send emails
+    if send == 'y':
+        print("Attempting to send emails...\n")
+        # Check if dry run
+        if args.dry_run:
+            # Send emails to yourself as a test
+            send_emails(pairs, df, config, dry_run=True)
+        else:
+            # Send the emails
+            send_emails(pairs, df, config)
+        print("Done! Secret Santa pairs have been emailed. Merry Christmas!")
+    else:
+        print("Not sending emails. Program Aborted.\n")
