@@ -32,6 +32,8 @@ If everything looks good, just run the same command as above without the `dry_ru
 python sock_swap.py --participants participants.csv --config config.yml
 ```
 
+The script will make a file called `secret_pairs.txt` that contain all the pairs. These are for your reference, but if you're participating, don't look at them! You can optionally share this with an independent party before sending the emails if you want to confirm that nothing went wrong.
+
 ### Ideas for Improving
 
 If so inclined, I have a few ideas for making this better. First, I think the command-line-interface a little more festive. Maybe print some Christmas themed ASCII art? Also, the emails are pretty boring. Making a festive HTML template for the emails would really make this utility cooler.
