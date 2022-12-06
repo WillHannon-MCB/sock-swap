@@ -84,7 +84,7 @@ def send_emails(pairs, df, config, dry_run=False):
         # Create the email message content
         msg = EmailMessage()
         msg.set_content(
-            f"Hi {pair[0]},\n\n\tYour secret Bloom Lab sock swap assignment is {pair[1]}! Their sock size is {sock_size}.\n\nHappy Holidays!")
+            f"Hi {pair[0]},\n\n\tYour secret Bloom Lab sock swap assignment is {pair[1]}! Their sock size is '{sock_size}'.\n\nHappy Holidays!")
         # Set the subject
         msg['Subject'] = 'Secret Sock Swap Assignment'
         msg['From'] = username
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, default='config.yaml',
                         help='Path to the config file')
     # Add the argument for dry run, true or false
-    parser.add_argument('--dry_run', type=bool, default=False,
+    parser.add_argument('--dry_run', action=argparse.BooleanOptionalAction,
                         help='Dry run, send test emails to yourself')
     # Parse the arguments
     args = parser.parse_args()
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     with open('secret_pairs.txt', 'w') as f:
         for pair in pairs:
             f.write(f"{pair[0]} has {pair[1]}\n")
-    print("Wrote emails to secret_pairs.txt\n")
+    print("Wrote the pairs to secret_pairs.txt\n")
 
     # Get user input to send emails
     send = input("Send emails? (y/n): ")
@@ -156,9 +156,11 @@ if __name__ == '__main__':
         # Check if dry run
         if args.dry_run:
             # Send emails to yourself as a test
+            print("Dry run, sending emails to yourself...\n")
             send_emails(pairs, df, config, dry_run=True)
         else:
             # Send the emails
+            print("Sending the emails...\n")
             send_emails(pairs, df, config)
         print("Done! Secret Santa pairs have been emailed. Merry Christmas!")
     else:
